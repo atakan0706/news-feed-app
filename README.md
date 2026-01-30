@@ -140,8 +140,6 @@ npm run dev
 3. API anahtarınızı alın
 4. `backend/.env` dosyasındaki `NEWS_API_KEY` değişkenine ekleyin
 
----
 
-## 📄 Lisans
 
-MIT
+
