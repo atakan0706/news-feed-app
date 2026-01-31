@@ -54,10 +54,76 @@ exports.login = async (req, res) => {
       user: {
         username: user.username,
         email: user.email,
-        interests: user.interests
+        interests: user.interests,
+        savedArticles: user.savedArticles || []
       }
     })
   } catch (err) {
+    res.status(500).json({ message: "Server hatası" })
+  }
+}
+
+// SAVE ARTICLE (sonra oku)
+exports.saveArticle = async (req, res) => {
+  try {
+    const { article } = req.body
+    if (!article || !article.url)
+      return res.status(400).json({ message: "Haber verisi gerekli" })
+
+    const user = await User.findById(req.user._id)
+    if (user.savedArticles.some(a => a.url === article.url))
+      return res.json({ message: "Zaten kaydedilmiş", savedArticles: user.savedArticles })
+
+    user.savedArticles.push({
+      title: article.title,
+      description: article.description || "",
+      url: article.url,
+      urlToImage: article.urlToImage || "",
+      publishedAt: article.publishedAt || "",
+      source: article.source || {},
+      category: article.category || ""
+    })
+    await user.save()
+
+    res.json({
+      message: "Haber kaydedildi",
+      savedArticles: user.savedArticles
+    })
+  } catch (err) {
+    console.error("saveArticle hatası:", err)
+    res.status(500).json({ message: "Server hatası" })
+  }
+}
+
+// UNSAVE ARTICLE
+exports.unsaveArticle = async (req, res) => {
+  try {
+    const { url } = req.body
+    if (!url) return res.status(400).json({ message: "URL gerekli" })
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { $pull: { savedArticles: { url } } },
+      { new: true }
+    )
+
+    res.json({
+      message: "Kaydedilenlerden çıkarıldı",
+      savedArticles: user.savedArticles || []
+    })
+  } catch (err) {
+    console.error("unsaveArticle hatası:", err)
+    res.status(500).json({ message: "Server hatası" })
+  }
+}
+
+// GET SAVED ARTICLES
+exports.getSavedArticles = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("savedArticles")
+    res.json(user?.savedArticles || [])
+  } catch (err) {
+    console.error("getSavedArticles hatası:", err)
     res.status(500).json({ message: "Server hatası" })
   }
 }

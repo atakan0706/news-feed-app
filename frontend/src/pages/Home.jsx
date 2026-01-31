@@ -1,14 +1,24 @@
 import React, { useEffect, useState } from "react";
 import api from "../services/api";
 import CategorySelector from "../components/CategorySelector";
+import LayoutSelector, { LAYOUTS } from "../components/LayoutSelector";
 import NewsCard from "../components/NewsCard";
 import { useAuth } from "../context/AuthContext";
 
 export default function Home() {
   const { user, isAuthenticated } = useAuth();
   const [category, setCategory] = useState("all"); // "all" = tümü karışık, "for-you" = favoriler
+  const [layout, setLayout] = useState(() => {
+    const stored = localStorage.getItem("news-feed-layout");
+    if (stored) {
+      const n = parseInt(stored, 10);
+      if ([1, 2, 4].includes(n)) return n;
+    }
+    return 4;
+  });
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [savedUrls, setSavedUrls] = useState(new Set());
 
   // Kullanıcı giriş yaptıysa "Benim için" ile başla
   useEffect(() => {
@@ -50,8 +60,38 @@ export default function Home() {
     fetchNews();
   }, [category, isAuthenticated, user]);
 
+  // Kaydedilen haber URL'lerini yükle (giriş yapmışsa)
+  useEffect(() => {
+    if (isAuthenticated) {
+      api.get("/auth/saved")
+        .then(res => {
+          const urls = (res.data || []).map(a => a.url);
+          setSavedUrls(new Set(urls));
+        })
+        .catch(() => {});
+    } else {
+      setSavedUrls(new Set());
+    }
+  }, [isAuthenticated]);
+
+  const handleToggleSave = (article, isSaved) => {
+    if (!isAuthenticated) return;
+    if (isSaved) {
+      api.delete("/auth/saved", { data: { url: article.url } })
+        .then(() => setSavedUrls(prev => { const s = new Set(prev); s.delete(article.url); return s; }))
+        .catch(console.error);
+    } else {
+      const toSave = { ...article };
+      if (category && category !== "all" && category !== "for-you") toSave.category = category;
+      api.post("/auth/saved", { article: toSave })
+        .then(() => setSavedUrls(prev => new Set([...prev, article.url])))
+        .catch(console.error);
+    }
+  };
+
   const featuredNews = news[0];
   const otherNews = news.slice(1);
+  const gridClass = LAYOUTS.find(l => l.value === layout)?.gridClass || LAYOUTS[2].gridClass;
 
   // Kategori adını bul
   const getCategoryTitle = () => {
@@ -92,8 +132,9 @@ export default function Home() {
         </p>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      <div className="flex flex-col gap-4 mb-8">
         <CategorySelector category={category} setCategory={setCategory} />
+        <LayoutSelector layout={layout} setLayout={setLayout} />
       </div>
 
       {loading ? (
@@ -117,12 +158,31 @@ export default function Home() {
       ) : (
         <>
           {featuredNews && (
-            <a
-              href={featuredNews.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group block mb-12 rounded-2xl overflow-hidden bg-secondary/60 border border-white/[0.06] shadow-card hover:shadow-card-hover hover:border-white/[0.12] transition-all duration-300 animate-slide-up"
-            >
+            <div className="group block mb-12 rounded-2xl overflow-hidden bg-secondary/60 border border-white/[0.06] shadow-card hover:shadow-card-hover hover:border-white/[0.12] transition-all duration-300 animate-slide-up relative">
+              {isAuthenticated && (
+                <button
+                  type="button"
+                  onClick={() => handleToggleSave(featuredNews, savedUrls.has(featuredNews.url))}
+                  title={savedUrls.has(featuredNews.url) ? 'Kaydedilenlerden çıkar' : 'Sonra oku'}
+                  className="absolute top-5 right-5 z-10 p-2.5 rounded-xl bg-black/50 backdrop-blur-sm hover:bg-black/70 transition-colors"
+                >
+                  {savedUrls.has(featuredNews.url) ? (
+                    <svg className="w-5 h-5 text-accent" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5 text-text-muted hover:text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                  )}
+                </button>
+              )}
+              <a
+                href={featuredNews.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block"
+              >
               <div className="grid md:grid-cols-2 gap-0">
                 <div className="relative aspect-video md:aspect-auto md:min-h-[320px] overflow-hidden">
                   <img
@@ -148,13 +208,20 @@ export default function Home() {
                   </span>
                 </div>
               </div>
-            </a>
+              </a>
+            </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className={`grid ${gridClass} gap-6`}>
             {otherNews.map((n, i) => (
               <div key={i} className="animate-fade-in" style={{ animationDelay: `${Math.min(i * 0.05, 0.4)}s` }}>
-                <NewsCard article={n} category={category} />
+                <NewsCard
+                  article={n}
+                  category={category}
+                  isAuthenticated={isAuthenticated}
+                  isSaved={savedUrls.has(n.url)}
+                  onToggleSave={() => handleToggleSave(n, savedUrls.has(n.url))}
+                />
               </div>
             ))}
           </div>

@@ -17,6 +17,18 @@ const UserSchema = new mongoose.Schema({
   interests: {
     type: [String],
     default: []
+  },
+  savedArticles: {
+    type: [{
+      title: String,
+      description: String,
+      url: String,
+      urlToImage: String,
+      publishedAt: String,
+      source: mongoose.Schema.Types.Mixed,
+      category: String
+    }],
+    default: []
   }
 }, { timestamps: true });
 

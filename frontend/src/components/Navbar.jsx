@@ -75,6 +75,16 @@ function Navbar() {
                       </div>
                       <div className="py-1">
                         <Link
+                          to="/saved"
+                          onClick={() => setShowDropdown(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-text-muted hover:text-text-light hover:bg-white/[0.04] transition-colors text-sm"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                          </svg>
+                          Kaydedilenler
+                        </Link>
+                        <Link
                           to="/select-interests"
                           onClick={() => setShowDropdown(false)}
                           className="flex items-center gap-3 px-4 py-2.5 text-text-muted hover:text-text-light hover:bg-white/[0.04] transition-colors text-sm"

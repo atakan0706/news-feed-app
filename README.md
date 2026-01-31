@@ -17,6 +17,8 @@ Kişiselleştirilebilir bir haber beslemesi web uygulaması. Kullanıcılar ilgi
 - **Favori kategoriler** – Kalp ikonu ile favori kategorileri ekleyip çıkarma
 - **"Benim İçin" akışı** – Favori kategorilerden karışık haberler
 - **"Tümü" seçeneği** – Tüm kategorilerden rastgele haberler
+- **Görünüm seçenekleri** – Satır başına 1, 2 veya 4 haber görünümü (tercih kaydedilir)
+- **Kaydedilenler** – Giriş yaptıktan sonra haberleri "Sonra oku" ile kaydetme
 - **Dinamik haber API** – NewsAPI.org entegrasyonu
 - **Modern tasarım** – Sade, kullanıcı dostu, koyu tema arayüz
 
@@ -44,13 +46,13 @@ news-feed-app/
 │       ├── config/db.js        # DB bağlantı
 │       ├── controllers/        # Auth & News controller
 │       ├── middleware/         # JWT auth middleware
-│       ├── models/             # User model
+│       ├── models/             # User model (savedArticles dahil)
 │       └── routes/             # API route'ları
 ├── frontend/
 │   └── src/
-│       ├── components/         # Navbar, CategorySelector, NewsCard
+│       ├── components/         # Navbar, CategorySelector, NewsCard, LayoutSelector
 │       ├── context/            # AuthContext
-│       ├── pages/              # Home, Login, Register, SelectInterests
+│       ├── pages/              # Home, Login, Register, SelectInterests, Saved
 │       └── services/           # API servisi
 └── README.md
 ```
@@ -127,6 +129,9 @@ npm run dev
 | POST | `/api/auth/register` | Kullanıcı kaydı |
 | POST | `/api/auth/login` | Giriş |
 | PUT | `/api/auth/interests` | İlgi alanlarını güncelle (JWT gerekli) |
+| GET | `/api/auth/saved` | Kaydedilen haberleri getir (JWT gerekli) |
+| POST | `/api/auth/saved` | Haber kaydet (JWT gerekli) |
+| DELETE | `/api/auth/saved` | Haberi kaydedilenlerden çıkar (JWT gerekli) |
 | GET | `/api/news?category=<kategori>` | Haberleri getir |
 
 **Kategoriler:** `all`, `technology`, `sports`, `business`, `health`, `science`, `entertainment`, `general`
@@ -139,9 +144,3 @@ npm run dev
 2. Ücretsiz hesap oluşturun
 3. API anahtarınızı alın
 4. `backend/.env` dosyasındaki `NEWS_API_KEY` değişkenine ekleyin
-
----
-
-## 📄 Lisans
-
-MIT
