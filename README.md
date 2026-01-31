@@ -143,4 +143,3 @@ npm run dev
 1. [NewsAPI.org](https://newsapi.org/register) adresine gidin
 2. Ücretsiz hesap oluşturun
 3. API anahtarınızı alın
-4. `backend/.env` dosyasındaki `NEWS_API_KEY` değişkenine ekleyin
